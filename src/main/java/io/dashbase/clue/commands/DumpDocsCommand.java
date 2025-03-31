@@ -49,8 +49,7 @@ public class DumpDocsCommand extends ClueCommand {
         }
         IndexReader reader = ctx.getIndexReader();
         List<LeafReaderContext> leaves = reader.leaves();
-        for (int i = 0; i < reader.numDocs() ; ++i) {
-            out.println("doc:" + i);
+        for (int i = 0; i <= reader.numDocs() ; ++i) {
             for (LeafReaderContext ctx : leaves) {
                 LeafReader atomicReader = ctx.reader();
 
@@ -65,6 +64,7 @@ public class DumpDocsCommand extends ClueCommand {
 
                     if (storedData == null) continue;
 
+                    out.println("doc:" + i);
                     for (IndexableField indexableField : storedData.getFields()) {
                         if (fieldsSet.size() > 0 && !fieldsSet.contains(indexableField.name())) {
                             continue;
