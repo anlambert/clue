@@ -50,7 +50,7 @@ public class DumpDocsCommand extends ClueCommand {
         IndexReader reader = ctx.getIndexReader();
         List<LeafReaderContext> leaves = reader.leaves();
         for (int i = 0; i <= reader.numDocs() ; ++i) {
-
+            out.println("doc:" + i);
             for (LeafReaderContext ctx : leaves) {
                 LeafReader atomicReader = ctx.reader();
 
@@ -92,7 +92,6 @@ public class DumpDocsCommand extends ClueCommand {
                     }
                 }
             }
-            out.println("");
         }
     }
 }
