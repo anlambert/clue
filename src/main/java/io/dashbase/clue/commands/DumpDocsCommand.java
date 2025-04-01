@@ -3,6 +3,7 @@ package io.dashbase.clue.commands;
 import io.dashbase.clue.LuceneContext;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -13,6 +14,7 @@ import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.util.BytesRef;
+import org.json.JSONObject;
 
 @Readonly
 public class DumpDocsCommand extends ClueCommand {
@@ -31,12 +33,12 @@ public class DumpDocsCommand extends ClueCommand {
 
     @Override
     public String help() {
-        return "dumps all the stored fields for all document";
+        return "dumps all documents in NDJSON format";
     }
 
     @Override
     protected ArgumentParser buildParser(ArgumentParser parser) {
-        parser.addArgument("-f", "--fields").required(false).help("only dumps fields with given names (comma separated)");
+        parser.addArgument("-f", "--fields").required(false).help("only dumps document fields with given names (comma separated)");
         return parser;
     }
 
@@ -49,7 +51,9 @@ public class DumpDocsCommand extends ClueCommand {
         }
         IndexReader reader = ctx.getIndexReader();
         List<LeafReaderContext> leaves = reader.leaves();
+        HashMap<String, Object> doc = new HashMap<>();
         for (int i = 0; i <= reader.numDocs() ; ++i) {
+            doc.clear();
             for (LeafReaderContext ctx : leaves) {
                 LeafReader atomicReader = ctx.reader();
 
@@ -64,31 +68,33 @@ public class DumpDocsCommand extends ClueCommand {
 
                     if (storedData == null) continue;
 
-                    out.println("doc:" + i);
+                    doc.put("doc", i);
                     for (IndexableField indexableField : storedData.getFields()) {
                         if (fieldsSet.size() > 0 && !fieldsSet.contains(indexableField.name())) {
                             continue;
                         }
-                        out.print(indexableField.name() + ":");
+                        
                         final Number number = indexableField.numericValue();
                         if (number != null) {
-                            out.println(number);
+                            doc.put(indexableField.name(), number);
                             continue;
                         }
 
                         final String strData = indexableField.stringValue();
 
                         if (strData != null) {
-                            out.println(strData);
+                            doc.put(indexableField.name(), strData);
                             continue;
                         }
 
                         final BytesRef bytesRef = indexableField.binaryValue();
                         if (bytesRef != null) {
-                            out.println(bytesRef);
+                            doc.put(indexableField.name(), bytesRef);
                         }
+                    }
 
-                        out.println("<unsupported value type>");
+                    if (doc.size() > 1) {
+                        out.println(new JSONObject(doc));
                     }
                 }
             }
